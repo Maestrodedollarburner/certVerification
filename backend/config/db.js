@@ -34,9 +34,7 @@ const connectDB = async () => {
 
   if (process.env.USE_MEMORY_DB === 'true') {
     const { MongoMemoryServer } = require('mongodb-memory-server');
-    memoryServer = await MongoMemoryServer.create({
-      binary: { version: '6.0.14' },
-    });
+    memoryServer = await MongoMemoryServer.create();
     await mongoose.connect(memoryServer.getUri());
     console.log('In-memory MongoDB connected (USE_MEMORY_DB=true)');
     await seedAdminIfNeeded();
