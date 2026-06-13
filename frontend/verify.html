@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Certificate - CertiChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-app sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="/"><i class="bi bi-shield-check"></i> Certi<span>Chain</span></a>
+      <div class="navbar-nav ms-auto flex-row gap-2">
+        <a class="nav-link text-white" href="/">Home</a>
+        <a class="nav-link text-white" href="/login.html">Login</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="page-header text-center animate-in">
+      <h1><i class="bi bi-patch-check"></i> Certificate Verification</h1>
+      <p class="text-muted">Verify the authenticity of academic certificates using Certificate ID or QR code</p>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card card-interactive p-4 mb-4 animate-in">
+          <form id="verifyForm">
+            <div class="mb-3">
+              <label class="form-label">Certificate ID</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+                <input type="text" class="form-control form-control-lg" id="certificateId"
+                  placeholder="e.g. CERT-A1B2C3D4E5F6" required>
+                <button type="submit" class="btn btn-primary btn-lg" id="verifyBtn">
+                  <i class="bi bi-search"></i> Verify
+                </button>
+              </div>
+            </div>
+          </form>
+          <div class="text-center">
+            <p class="text-muted small mb-2">Or scan a QR code from a certificate</p>
+            <button class="btn btn-outline-primary btn-sm" id="scanBtn">
+              <i class="bi bi-qr-code-scan"></i> Scan QR Code
+            </button>
+            <video id="qrVideo" class="d-none mt-3 rounded" width="300" height="200"></video>
+          </div>
+        </div>
+
+        <div id="result" class="d-none"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const prefillId = params.get('id');
+    if (prefillId) {
+      document.getElementById('certificateId').value = prefillId;
+      verifyCertificate(prefillId, 'qr');
+    }
+
+    document.getElementById('verifyForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      verifyCertificate(document.getElementById('certificateId').value.trim(), 'id');
+    });
+
+    async function verifyCertificate(id, method) {
+      const btn = document.getElementById('verifyBtn');
+      const resultDiv = document.getElementById('result');
+      btn.disabled = true;
+      UI.setButtonLoading(btn, true, 'Verifying...');
+      resultDiv.classList.add('d-none');
+
+      try {
+        const data = await api.verifyCertificate(id, method);
+        const v = data.verification;
+        const statusClass = v.status.toLowerCase().replace(' ', '-');
+        const icon = v.status === 'Valid' ? 'check-circle-fill' :
+          v.status === 'Tampered' ? 'exclamation-triangle-fill' : 'x-circle-fill';
+
+        resultDiv.innerHTML = `
+          <div class="verification-result ${statusClass}">
+            <i class="bi bi-${icon} display-4 mb-3"></i>
+            <h2>${v.status}</h2>
+            <p class="lead">${v.message}</p>
+          </div>
+          ${v.status !== 'Not Found' ? `
+          <div class="card p-4 mt-4">
+            <h5>Certificate Details</h5>
+            <div class="row mt-3">
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">Certificate ID</small>
+                <p class="mb-0 fw-bold">${v.certificateId}</p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">Student Name</small>
+                <p class="mb-0 fw-bold">${v.studentName}</p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">Student ID</small>
+                <p class="mb-0">${v.studentId}</p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">Institution</small>
+                <p class="mb-0">${v.institutionName}</p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">Degree Awarded</small>
+                <p class="mb-0">${v.degreeAwarded}</p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">Programme</small>
+                <p class="mb-0">${v.programme} — ${v.department}</p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">Graduation Year</small>
+                <p class="mb-0">${v.graduationYear}</p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted">Issue Date</small>
+                <p class="mb-0">${formatDate(v.issueDate)}</p>
+              </div>
+            </div>
+            ${v.onChain ? `
+            <hr>
+            <h6><i class="bi bi-link-45deg"></i> Blockchain Record</h6>
+            <div class="hash-display mt-2">Hash: ${v.certificateHash}</div>
+            ${v.transactionHash ? `<div class="hash-display mt-2">TX: ${v.transactionHash}</div>` : ''}
+            ${v.blockNumber ? `<p class="small text-muted mt-2">Block #${v.blockNumber}</p>` : ''}
+            ` : '<p class="text-muted small mt-2">Not recorded on blockchain</p>'}
+          </div>` : ''}`;
+
+        resultDiv.classList.remove('d-none');
+      } catch (err) {
+        resultDiv.innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+        resultDiv.classList.remove('d-none');
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-search"></i> Verify';
+    }
+
+    let scanning = false;
+    document.getElementById('scanBtn').addEventListener('click', async () => {
+      const video = document.getElementById('qrVideo');
+      if (scanning) {
+        scanning = false;
+        video.classList.add('d-none');
+        const stream = video.srcObject;
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = stream;
+        video.classList.remove('d-none');
+        video.play();
+        scanning = true;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const scan = () => {
+          if (!scanning) return;
+          if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            if (code) {
+              const url = new URL(code.data);
+              const certId = url.searchParams.get('id');
+              if (certId) {
+                document.getElementById('certificateId').value = certId;
+                scanning = false;
+                stream.getTracks().forEach(t => t.stop());
+                video.classList.add('d-none');
+                verifyCertificate(certId, 'qr');
+                return;
+              }
+            }
+          }
+          requestAnimationFrame(scan);
+        };
+        scan();
+      } catch {
+        alert('Camera access denied or not available');
+      }
+    });
+  </script>
+</body>
+</html>

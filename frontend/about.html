@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About - CertiChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-app sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="/"><i class="bi bi-shield-check"></i> Certi<span>Chain</span></a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+          <li class="nav-item"><a class="nav-link active" href="/about.html">About</a></li>
+          <li class="nav-item"><a class="nav-link" href="/verify.html">Verify</a></li>
+          <li class="nav-item"><a class="nav-link" href="/login.html">Login</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="page-header">
+      <h1>About CertiChain</h1>
+      <p class="text-muted">A blockchain-based solution for academic certificate verification</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="card p-4 mb-4">
+          <h3>Problem Statement</h3>
+          <p>Educational institutions continue to face challenges related to certificate forgery, document tampering, and inefficient verification processes. Traditional certificate verification methods are time-consuming and vulnerable to manipulation.</p>
+          <p>CertiChain provides a secure blockchain-based platform where academic certificates can be issued, recorded, and verified with confidence.</p>
+        </div>
+
+        <div class="card p-4 mb-4">
+          <h3>Technology Stack</h3>
+          <div class="row g-3 mt-2">
+            <div class="col-md-6">
+              <h6><i class="bi bi-window"></i> Frontend</h6>
+              <p class="text-muted small">HTML5, CSS3, JavaScript, Bootstrap 5</p>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="bi bi-server"></i> Backend</h6>
+              <p class="text-muted small">Node.js, Express.js, MongoDB</p>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="bi bi-link-45deg"></i> Blockchain</h6>
+              <p class="text-muted small">Ethereum, Solidity, Ganache, Web3.js</p>
+            </div>
+            <div class="col-md-6">
+              <h6><i class="bi bi-tools"></i> Security</h6>
+              <p class="text-muted small">bcrypt, JWT, SHA-256 Hashing</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-4">
+          <h3>Blockchain Principles Demonstrated</h3>
+          <ul class="list-group list-group-flush mt-3">
+            <li class="list-group-item d-flex align-items-center">
+              <i class="bi bi-check-circle-fill text-success me-3"></i>
+              <div><strong>Decentralization</strong> — Distributed ledger with no single point of control</div>
+            </li>
+            <li class="list-group-item d-flex align-items-center">
+              <i class="bi bi-check-circle-fill text-success me-3"></i>
+              <div><strong>Transparency</strong> — All transactions visible and auditable</div>
+            </li>
+            <li class="list-group-item d-flex align-items-center">
+              <i class="bi bi-check-circle-fill text-success me-3"></i>
+              <div><strong>Immutability</strong> — Records cannot be altered once written</div>
+            </li>
+            <li class="list-group-item d-flex align-items-center">
+              <i class="bi bi-check-circle-fill text-success me-3"></i>
+              <div><strong>Security</strong> — Cryptographic hashing protects data integrity</div>
+            </li>
+            <li class="list-group-item d-flex align-items-center">
+              <i class="bi bi-check-circle-fill text-success me-3"></i>
+              <div><strong>Traceability</strong> — Complete history from issuance to verification</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card p-4 mb-4">
+          <h5>User Roles</h5>
+          <div class="mt-3">
+            <div class="mb-3">
+              <span class="badge bg-primary">Admin</span>
+              <p class="small text-muted mt-1 mb-0">Manage users, approve institutions, view reports</p>
+            </div>
+            <div class="mb-3">
+              <span class="badge bg-primary">Institution</span>
+              <p class="small text-muted mt-1 mb-0">Register students, issue certificates on blockchain</p>
+            </div>
+            <div class="mb-3">
+              <span class="badge bg-primary">Student</span>
+              <p class="small text-muted mt-1 mb-0">View, download, and share certificates</p>
+            </div>
+            <div>
+              <span class="badge bg-primary">Employer</span>
+              <p class="small text-muted mt-1 mb-0">Verify certificate authenticity instantly</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card p-4">
+          <h5>Smart Contract Functions</h5>
+          <ul class="list-unstyled mt-3 small">
+            <li class="mb-2"><code>issueCertificate()</code></li>
+            <li class="mb-2"><code>verifyCertificate()</code></li>
+            <li class="mb-2"><code>getCertificate()</code></li>
+            <li><code>updateCertificateStatus()</code></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer mt-5">
+    <div class="container text-center">
+      <p class="mb-0"><strong>CertiChain</strong> — Academic Certificate Verification System</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/ui.js"></script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - CertiChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-dark navbar-app sticky-top">
+    <div class="container-fluid px-3 px-md-4">
+      <button class="btn btn-menu-toggle d-md-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+        <i class="bi bi-list fs-5"></i>
+      </button>
+      <a class="navbar-brand" href="/"><i class="bi bi-shield-check"></i> CertiChain</a>
+      <div class="d-flex align-items-center gap-3 ms-auto">
+        <span class="navbar-user d-none d-sm-inline" id="userName"></span>
+        <button class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="offcanvas offcanvas-start sidebar-offcanvas d-md-none" tabindex="-1" id="sidebarMenu">
+    <div class="offcanvas-header border-bottom border-secondary border-opacity-25">
+      <h5 class="offcanvas-title text-white">Menu</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+      <nav class="nav flex-column py-2">
+        <a class="nav-link" href="/admin-dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a class="nav-link" href="/reports.html"><i class="bi bi-bar-chart"></i> Reports</a>
+        <a class="nav-link" href="/blockchain.html"><i class="bi bi-link-45deg"></i> Blockchain</a>
+        <a class="nav-link" href="/verify.html"><i class="bi bi-patch-check"></i> Verify</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="d-flex dashboard-layout">
+      <aside class="sidebar d-none d-md-block flex-shrink-0">
+        <nav class="nav flex-column">
+          <a class="nav-link" href="/admin-dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a>
+          <a class="nav-link" href="/reports.html"><i class="bi bi-bar-chart"></i> Reports</a>
+          <a class="nav-link" href="/blockchain.html"><i class="bi bi-link-45deg"></i> Blockchain</a>
+          <a class="nav-link" href="/verify.html"><i class="bi bi-patch-check"></i> Verify</a>
+        </nav>
+      </aside>
+      <main class="dashboard-content">
+        <div class="page-header d-flex justify-content-between align-items-center">
+          <div>
+            <h2>Admin Dashboard</h2>
+            <p class="text-muted mb-0">System overview and management</p>
+          </div>
+          <span class="blockchain-badge" id="blockchainStatus"><i class="bi bi-circle-fill"></i> Checking...</span>
+        </div>
+
+        <div class="row g-4 mb-4 stagger-group" id="statsCards">
+          <div class="col-6 col-lg-3 stagger-item"><div class="card stat-card p-3"><div class="stat-value" id="totalUsers">-</div><div class="stat-label">Total Users</div></div></div>
+          <div class="col-6 col-lg-3 stagger-item"><div class="card stat-card p-3"><div class="stat-value" id="totalInstitutions">-</div><div class="stat-label">Institutions</div></div></div>
+          <div class="col-6 col-lg-3 stagger-item"><div class="card stat-card p-3"><div class="stat-value" id="totalStudents">-</div><div class="stat-label">Students</div></div></div>
+          <div class="col-6 col-lg-3 stagger-item"><div class="card stat-card p-3"><div class="stat-value" id="totalCertificates">-</div><div class="stat-label">Certificates</div></div></div>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-lg-8">
+            <ul class="nav nav-tabs mb-3" role="tablist">
+              <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabUsers">Users</button></li>
+              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabCertificates">Certificates</button></li>
+              <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAuditors">Auditors</button></li>
+            </ul>
+            <div class="tab-content">
+              <div class="tab-pane fade show active" id="tabUsers">
+                <div class="card p-4">
+                  <h5>User Management</h5>
+                  <div class="d-flex gap-2 mb-3 mt-3 flex-wrap">
+                    <select class="form-select form-select-sm w-auto" id="roleFilter">
+                      <option value="">All Roles</option>
+                      <option value="institution">Institution</option>
+                      <option value="institution_staff">Institution Staff</option>
+                      <option value="student">Student</option>
+                      <option value="employer">Employer</option>
+                      <option value="auditor">Auditor</option>
+                    </select>
+                    <input type="text" class="form-control form-control-sm" id="searchUsers" placeholder="Search users..." style="max-width:220px">
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-hover">
+                      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+                      <tbody id="usersTable"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="tabCertificates">
+                <div class="card p-4">
+                  <h5>Certificate Management</h5>
+                  <p class="text-muted small">Revoke fraudulent or invalid certificates system-wide</p>
+                  <div class="d-flex gap-2 mb-3 flex-wrap">
+                    <input type="text" class="form-control form-control-sm" id="certSearch" placeholder="Search by ID, student, institution..." style="max-width:280px">
+                    <select class="form-select form-select-sm w-auto" id="certStatusFilter">
+                      <option value="">All Statuses</option>
+                      <option value="Valid">Valid</option>
+                      <option value="Revoked">Revoked</option>
+                    </select>
+                  </div>
+                  <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                      <thead><tr><th>Certificate ID</th><th>Student</th><th>Institution</th><th>Status</th><th>Action</th></tr></thead>
+                      <tbody id="adminCertsTable"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="tabAuditors">
+                <div class="card p-4">
+                  <h5>Create Auditor Account</h5>
+                  <p class="text-muted small">Auditors have read-only access to certificates, verifications, and reports</p>
+                  <div id="auditorAlert"></div>
+                  <form id="auditorForm" class="mt-3" style="max-width:400px">
+                    <div class="mb-3"><label class="form-label">Full Name</label><input class="form-control" id="auditorName" required></div>
+                    <div class="mb-3"><label class="form-label">Email</label><input type="email" class="form-control" id="auditorEmail" required></div>
+                    <div class="mb-3"><label class="form-label">Password</label><input type="password" class="form-control" id="auditorPassword" required minlength="6"></div>
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-person-plus"></i> Create Auditor</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card p-4 mb-4">
+              <h5>Recent Certificates</h5>
+              <div id="recentCerts" class="mt-3"></div>
+            </div>
+            <div class="card p-4">
+              <h5>Recent Verifications</h5>
+              <div id="recentVerifications" class="mt-3"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    const user = requireAuth(['admin']);
+    if (!user) throw new Error('Unauthorized');
+    document.getElementById('userName').textContent = user.name;
+
+    async function loadDashboard() {
+      const [statsData, usersData, chainStatus] = await Promise.all([
+        api.getAdminStats(),
+        api.getUsers(),
+        api.getBlockchainStatus(),
+      ]);
+
+      const s = statsData.stats;
+      document.getElementById('totalUsers').textContent = s.totalUsers;
+      document.getElementById('totalInstitutions').textContent = s.totalInstitutions;
+      document.getElementById('totalStudents').textContent = s.totalStudents;
+      document.getElementById('totalCertificates').textContent = s.totalCertificates;
+
+      document.getElementById('blockchainStatus').innerHTML = chainStatus.ready
+        ? '<i class="bi bi-circle-fill text-success"></i> Blockchain Connected'
+        : '<i class="bi bi-circle-fill text-warning"></i> Blockchain Offline';
+
+      renderUsers(usersData.users);
+      renderRecentCerts(statsData.recentCertificates);
+      renderRecentVerifications(statsData.recentVerifications);
+    }
+
+    function renderUsers(users) {
+      document.getElementById('usersTable').innerHTML = users.map(u => `
+        <tr>
+          <td>${u.name}</td>
+          <td>${u.email}</td>
+          <td><span class="badge bg-secondary">${u.role}</span></td>
+          <td>${u.role === 'institution' && !u.institutionApproved
+            ? '<span class="badge bg-warning">Pending</span>'
+            : u.isActive ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Inactive</span>'}</td>
+          <td>
+            ${u.role === 'institution' && !u.institutionApproved
+              ? `<button class="btn btn-sm btn-success" onclick="approveUser('${u._id}')">Approve</button>`
+              : `<button class="btn btn-sm btn-outline-${u.isActive ? 'danger' : 'success'}" onclick="toggleUser('${u._id}')">${u.isActive ? 'Deactivate' : 'Activate'}</button>`}
+          </td>
+        </tr>`).join('');
+    }
+
+    function renderRecentCerts(certs) {
+      document.getElementById('recentCerts').innerHTML = certs.length
+        ? certs.map(c => `<div class="d-flex justify-content-between border-bottom py-2">
+            <div><strong>${c.studentName}</strong><br><small class="text-muted">${c.certificateId}</small></div>
+            ${statusBadge(c.status)}
+          </div>`).join('')
+        : '<p class="text-muted">No certificates yet</p>';
+    }
+
+    function renderRecentVerifications(logs) {
+      document.getElementById('recentVerifications').innerHTML = logs.length
+        ? logs.map(l => `<div class="d-flex justify-content-between border-bottom py-2">
+            <div><small>${l.certificateId}</small></div>
+            ${statusBadge(l.result)}
+          </div>`).join('')
+        : '<p class="text-muted">No verifications yet</p>';
+    }
+
+    async function approveUser(id) {
+      await api.approveInstitution(id);
+      loadDashboard();
+    }
+
+    async function toggleUser(id) {
+      await api.toggleUserActive(id);
+      loadDashboard();
+    }
+
+    document.getElementById('roleFilter').addEventListener('change', async () => {
+      const role = document.getElementById('roleFilter').value;
+      const data = await api.getUsers(role ? `?role=${role}` : '');
+      renderUsers(data.users);
+    });
+
+    document.getElementById('searchUsers').addEventListener('input', async (e) => {
+      const search = e.target.value;
+      const role = document.getElementById('roleFilter').value;
+      let params = '';
+      if (role) params += `?role=${role}`;
+      if (search) params += `${params ? '&' : '?'}search=${search}`;
+      const data = await api.getUsers(params);
+      renderUsers(data.users);
+    });
+
+    async function loadAdminCertificates() {
+      const search = document.getElementById('certSearch').value;
+      const status = document.getElementById('certStatusFilter').value;
+      let params = '?';
+      if (search) params += `search=${encodeURIComponent(search)}&`;
+      if (status) params += `status=${status}`;
+      const data = await api.getAdminCertificates(params === '?' ? '' : params);
+      document.getElementById('adminCertsTable').innerHTML = data.certificates.map(c => `
+        <tr>
+          <td><small>${c.certificateId}</small></td>
+          <td>${c.studentName}</td>
+          <td>${c.institutionName}</td>
+          <td>${statusBadge(c.status)}</td>
+          <td>${c.status === 'Valid' ? `<button class="btn btn-sm btn-outline-danger" onclick="adminRevoke('${c.certificateId}')">Revoke</button>` : '-'}</td>
+        </tr>`).join('') || '<tr><td colspan="5" class="text-muted">No certificates</td></tr>';
+    }
+
+    async function adminRevoke(id) {
+      if (!confirm(`Revoke certificate ${id}? This will update the blockchain record.`)) return;
+      try {
+        await api.revokeCertificate(id);
+        loadAdminCertificates();
+        loadDashboard();
+      } catch (err) { alert(err.message); }
+    }
+
+    document.getElementById('certSearch').addEventListener('input', loadAdminCertificates);
+    document.getElementById('certStatusFilter').addEventListener('change', loadAdminCertificates);
+
+    document.getElementById('auditorForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        await api.createAuditor({
+          name: document.getElementById('auditorName').value,
+          email: document.getElementById('auditorEmail').value,
+          password: document.getElementById('auditorPassword').value,
+        });
+        showAlert(document.getElementById('auditorAlert'), 'Auditor account created successfully.', 'success');
+        e.target.reset();
+      } catch (err) {
+        showAlert(document.getElementById('auditorAlert'), err.message);
+      }
+    });
+
+    loadDashboard();
+    loadAdminCertificates();
+  </script>
+</body>
+</html>

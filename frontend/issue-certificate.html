@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Issue Certificate - CertiChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-dark navbar-app sticky-top">
+    <div class="container-fluid px-3 px-md-4">
+      <button class="btn btn-menu-toggle d-md-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+        <i class="bi bi-list fs-5"></i>
+      </button>
+      <a class="navbar-brand" href="/"><i class="bi bi-shield-check"></i> CertiChain</a>
+      <div class="d-flex align-items-center gap-3 ms-auto">
+        <span class="navbar-user d-none d-sm-inline" id="userName"></span>
+        <button class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="offcanvas offcanvas-start sidebar-offcanvas d-md-none" tabindex="-1" id="sidebarMenu">
+    <div class="offcanvas-header border-bottom border-secondary border-opacity-25">
+      <h5 class="offcanvas-title text-white">Menu</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+      <nav class="nav flex-column py-2">
+        <a class="nav-link" href="/issue-certificate.html"><i class="bi bi-award"></i> Issue Certificate</a>
+        <a class="nav-link" href="/institution-dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a class="nav-link" href="/blockchain.html"><i class="bi bi-link-45deg"></i> Blockchain</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="d-flex dashboard-layout">
+      <aside class="sidebar d-none d-md-block flex-shrink-0">
+        <nav class="nav flex-column">
+          <a class="nav-link" href="/institution-dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a>
+          <a class="nav-link" href="/issue-certificate.html"><i class="bi bi-award"></i> Issue Certificate</a>
+          <a class="nav-link" href="/blockchain.html"><i class="bi bi-link-45deg"></i> Blockchain</a>
+        </nav>
+      </aside>
+      <main class="dashboard-content">
+        <div class="page-header">
+          <h2><i class="bi bi-award"></i> Issue Certificate</h2>
+          <p class="text-muted mb-0">Create and record academic certificates on the blockchain</p>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-7">
+            <div class="card p-4">
+              <div id="alert"></div>
+              <form id="issueForm">
+                <div class="mb-3">
+                  <label class="form-label">Select Student</label>
+                  <select class="form-select" id="studentSelect" required>
+                    <option value="">Loading students...</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Degree Awarded</label>
+                  <input type="text" class="form-control" id="degreeAwarded"
+                    placeholder="e.g. Bachelor of Science in Computer Science" required>
+                </div>
+                <div id="studentPreview" class="card bg-light p-3 mb-3 d-none">
+                  <h6>Student Preview</h6>
+                  <div id="previewContent"></div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg" id="issueBtn">
+                  <i class="bi bi-link-45deg"></i> Issue & Record on Blockchain
+                </button>
+              </form>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="card p-4">
+              <h5>Issuance Process</h5>
+              <ol class="mt-3">
+                <li class="mb-2">Select a registered student</li>
+                <li class="mb-2">Enter the degree to be awarded</li>
+                <li class="mb-2">System generates unique Certificate ID</li>
+                <li class="mb-2">SHA-256 hash computed from certificate data</li>
+                <li class="mb-2">Hash recorded on Ethereum blockchain</li>
+                <li class="mb-2">QR code generated for verification</li>
+                <li>PDF certificate available for download</li>
+              </ol>
+            </div>
+            <div id="successCard" class="card p-4 mt-4 d-none border-success">
+              <h5 class="text-success"><i class="bi bi-check-circle"></i> Certificate Issued!</h5>
+              <div id="successContent"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    const user = requireInstitutionAuth();
+    if (!user) throw new Error('Unauthorized');
+    if (!can(user, 'issueCertificates')) {
+      alert('You do not have permission to issue certificates.');
+      window.location.href = '/institution-dashboard.html';
+    }
+    document.getElementById('userName').textContent = user.name;
+
+    let students = [];
+
+    async function loadStudents() {
+      try {
+        const data = await api.getStudents();
+        students = data.students;
+        const select = document.getElementById('studentSelect');
+        select.innerHTML = '<option value="">Select a student...</option>' +
+          students.map(s => `<option value="${s.studentId}">${s.fullName} (${s.studentId})</option>`).join('');
+      } catch (err) {
+        showAlert(document.getElementById('alert'), err.message);
+      }
+    }
+
+    document.getElementById('studentSelect').addEventListener('change', (e) => {
+      const student = students.find(s => s.studentId === e.target.value);
+      const preview = document.getElementById('studentPreview');
+      if (student) {
+        preview.classList.remove('d-none');
+        document.getElementById('previewContent').innerHTML = `
+          <p class="mb-1"><strong>${student.fullName}</strong></p>
+          <p class="mb-1 small text-muted">ID: ${student.studentId}</p>
+          <p class="mb-1 small">${student.programme} — ${student.department}</p>
+          <p class="mb-0 small">Class of ${student.graduationYear}</p>`;
+      } else {
+        preview.classList.add('d-none');
+      }
+    });
+
+    document.getElementById('issueForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('issueBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading-spinner"></span> Issuing on blockchain...';
+
+      try {
+        const data = await api.issueCertificate({
+          studentId: document.getElementById('studentSelect').value,
+          degreeAwarded: document.getElementById('degreeAwarded').value,
+        });
+
+        const c = data.certificate;
+        document.getElementById('successCard').classList.remove('d-none');
+        document.getElementById('successContent').innerHTML = `
+          <p class="mt-3"><strong>Certificate ID:</strong> ${c.certificateId}</p>
+          <p><strong>Hash:</strong> <span class="hash-display">${c.certificateHash}</span></p>
+          ${c.transactionHash ? `<p><strong>TX Hash:</strong> <span class="hash-display">${c.transactionHash}</span></p>` : ''}
+          ${c.qrCode ? `<div class="text-center mt-3"><img src="${c.qrCode}" width="150"><p class="small text-muted mt-2">Scan to verify</p></div>` : ''}
+          <p class="text-muted small mt-2">${data.message}</p>`;
+
+        showAlert(document.getElementById('alert'), data.message, 'success');
+        e.target.reset();
+        document.getElementById('studentPreview').classList.add('d-none');
+      } catch (err) {
+        showAlert(document.getElementById('alert'), err.message);
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-link-45deg"></i> Issue & Record on Blockchain';
+    });
+
+    loadStudents();
+  </script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Certificates - CertiChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-dark navbar-app sticky-top">
+    <div class="container-fluid px-3 px-md-4">
+      <a class="navbar-brand" href="/"><i class="bi bi-shield-check"></i> CertiChain</a>
+      <div class="d-flex align-items-center gap-3 ms-auto">
+        <span class="navbar-user d-none d-sm-inline" id="userName"></span>
+        <button class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="student-portal">
+    <section class="student-hero">
+      <div class="container student-hero-content">
+        <div class="row align-items-center g-4">
+          <div class="col-md-7">
+            <div class="d-flex align-items-center gap-3">
+              <div class="student-avatar" id="userInitials">?</div>
+              <div>
+                <h1>Welcome back, <span id="firstName">Student</span></h1>
+                <p class="subtitle mb-0"><i class="bi bi-mortarboard me-1"></i> Your verified academic credentials</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-5">
+            <div class="row g-2">
+              <div class="col-4">
+                <div class="student-stat-mini">
+                  <div class="value" id="statTotal">0</div>
+                  <div class="label">Total</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="student-stat-mini">
+                  <div class="value" id="statValid">0</div>
+                  <div class="label">Valid</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="student-stat-mini">
+                  <div class="value" id="statOnChain">0</div>
+                  <div class="label">On Chain</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="container pb-5">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h4 class="mb-0">My Certificates</h4>
+          <p class="text-muted small mb-0">Download, share, or verify your credentials anytime</p>
+        </div>
+        <a href="/verify.html" class="btn btn-outline-primary btn-sm">
+          <i class="bi bi-patch-check"></i> Verify a Certificate
+        </a>
+      </div>
+
+      <div id="certificatesList" class="row g-4 stagger-group"></div>
+
+      <div id="emptyState" class="student-empty d-none animate-in">
+        <div class="empty-icon-wrap">
+          <i class="bi bi-award"></i>
+        </div>
+        <h4>No Certificates Yet</h4>
+        <p class="text-muted col-md-6 mx-auto">
+          When your institution issues your academic certificate, it will appear here with a QR code and blockchain verification.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="certModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title">Certificate Details</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body pt-2" id="certModalBody"></div>
+        <div class="modal-footer border-0 pt-0">
+          <button class="btn btn-primary" id="downloadBtn"><i class="bi bi-download"></i> Download PDF</button>
+          <button class="btn btn-outline-primary" id="shareBtn"><i class="bi bi-share"></i> Copy Link</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="copyToast" class="toast align-items-center text-bg-success border-0" role="alert">
+      <div class="d-flex">
+        <div class="toast-body"><i class="bi bi-check-circle me-1"></i> Verification link copied!</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    const user = requireAuth(['student']);
+    if (!user) throw new Error('Unauthorized');
+
+    document.getElementById('userName').textContent = user.name;
+    document.getElementById('firstName').textContent = user.name.split(' ')[0];
+    document.getElementById('userInitials').textContent = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+
+    let currentCertId = null;
+    let certificates = [];
+
+    async function loadCertificates() {
+      const data = await api.getMyCertificates();
+      certificates = data.certificates;
+      const list = document.getElementById('certificatesList');
+      const empty = document.getElementById('emptyState');
+
+      document.getElementById('statTotal').textContent = certificates.length;
+      document.getElementById('statValid').textContent = certificates.filter(c => c.status === 'Valid').length;
+      document.getElementById('statOnChain').textContent = certificates.filter(c => c.onChain).length;
+
+      if (!certificates.length) {
+        list.innerHTML = '';
+        empty.classList.remove('d-none');
+        return;
+      }
+
+      empty.classList.add('d-none');
+      list.innerHTML = certificates.map((c, i) => `
+        <div class="col-md-6 col-xl-4 stagger-item" style="animation-delay:${i * 0.08}s">
+          <div class="student-cert-card">
+            <div class="cert-banner">
+              <div class="cert-icon"><i class="bi bi-award-fill"></i></div>
+              ${c.onChain ? '<span class="blockchain-badge"><i class="bi bi-link-45deg"></i> Blockchain Verified</span>' : ''}
+            </div>
+            <div class="cert-body">
+              <div class="degree-title">${c.degreeAwarded}</div>
+              <div class="institution-name"><i class="bi bi-building me-1"></i>${c.institutionName}</div>
+              <div class="cert-meta">
+                <span class="meta-chip"><i class="bi bi-calendar3 me-1"></i>${formatDate(c.issueDate)}</span>
+                <span class="meta-chip">${c.programme || c.department || ''}</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                ${statusBadge(c.status)}
+                <small class="text-muted">${c.certificateId}</small>
+              </div>
+              <div class="cert-actions">
+                <button class="btn btn-primary btn-sm" onclick="viewCert('${c.certificateId}')">
+                  <i class="bi bi-eye"></i> View
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="quickDownload('${c.certificateId}')">
+                  <i class="bi bi-download"></i> PDF
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="quickShare('${c.certificateId}')">
+                  <i class="bi bi-share"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function viewCert(id) {
+      const data = await api.getCertificate(id);
+      const c = data.certificate;
+      currentCertId = c.certificateId;
+
+      document.getElementById('certModalBody').innerHTML = `
+        <div class="certificate-preview">
+          <div class="mb-2">${c.onChain ? '<span class="blockchain-badge"><i class="bi bi-link-45deg"></i> Verified on Blockchain</span>' : ''}</div>
+          <h4 class="text-primary">${c.institutionName}</h4>
+          <p class="text-muted small mb-1">Certificate of Achievement</p>
+          <h2 class="my-3">${c.studentName}</h2>
+          <h5>${c.degreeAwarded}</h5>
+          <p class="text-muted">${c.programme} · ${c.department} · Class of ${c.graduationYear}</p>
+          <hr>
+          <div class="row text-start g-3">
+            <div class="col-sm-6"><small class="text-muted d-block">Certificate ID</small><strong>${c.certificateId}</strong></div>
+            <div class="col-sm-6"><small class="text-muted d-block">Issue Date</small><strong>${formatDate(c.issueDate)}</strong></div>
+            <div class="col-12"><small class="text-muted d-block">Blockchain Hash</small><div class="hash-display">${c.certificateHash || 'N/A'}</div></div>
+          </div>
+          ${c.qrCode ? `<div class="text-center mt-4"><div class="qr-container"><img src="${c.qrCode}" width="140" alt="QR Code"></div><p class="small text-muted mt-2">Scan to verify this certificate</p></div>` : ''}
+        </div>`;
+
+      new bootstrap.Modal(document.getElementById('certModal')).show();
+    }
+
+    async function quickDownload(id) {
+      const res = await api.downloadCertificate(id);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${id}.pdf`;
+      a.click();
+    }
+
+    async function quickShare(id) {
+      const data = await api.getCertificate(id);
+      await navigator.clipboard.writeText(data.certificate.verificationUrl);
+      bootstrap.Toast.getOrCreateInstance(document.getElementById('copyToast')).show();
+    }
+
+    document.getElementById('downloadBtn').addEventListener('click', () => quickDownload(currentCertId));
+    document.getElementById('shareBtn').addEventListener('click', async () => {
+      await quickShare(currentCertId);
+    });
+
+    loadCertificates();
+  </script>
+</body>
+</html>

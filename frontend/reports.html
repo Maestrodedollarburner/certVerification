@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports - CertiChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-dark navbar-app sticky-top">
+    <div class="container-fluid px-3 px-md-4">
+      <button class="btn btn-menu-toggle d-md-none me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+        <i class="bi bi-list fs-5"></i>
+      </button>
+      <a class="navbar-brand" href="/"><i class="bi bi-shield-check"></i> CertiChain</a>
+      <div class="d-flex align-items-center gap-3 ms-auto">
+        <span class="navbar-user d-none d-sm-inline" id="userName"></span>
+        <button class="btn btn-outline-light btn-sm" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="offcanvas offcanvas-start sidebar-offcanvas d-md-none" tabindex="-1" id="sidebarMenu">
+    <div class="offcanvas-header border-bottom border-secondary border-opacity-25">
+      <h5 class="offcanvas-title text-white">Menu</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body p-0">
+      <nav class="nav flex-column py-2">
+        <a class="nav-link" href="/admin-dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a class="nav-link" href="/reports.html"><i class="bi bi-bar-chart"></i> Reports</a>
+        <a class="nav-link" href="/blockchain.html"><i class="bi bi-link-45deg"></i> Blockchain</a>
+      </nav>
+    </div>
+  </div>
+
+  <div class="d-flex dashboard-layout">
+      <aside class="sidebar d-none d-md-block flex-shrink-0">
+        <nav class="nav flex-column">
+          <a class="nav-link" href="/admin-dashboard.html"><i class="bi bi-speedometer2"></i> Dashboard</a>
+          <a class="nav-link" href="/reports.html"><i class="bi bi-bar-chart"></i> Reports</a>
+          <a class="nav-link" href="/blockchain.html"><i class="bi bi-link-45deg"></i> Blockchain</a>
+        </nav>
+      </aside>
+      <main class="dashboard-content">
+        <div class="page-header">
+          <h2><i class="bi bi-bar-chart"></i> System Reports</h2>
+          <p class="text-muted mb-0">Analytics and certificate issuance statistics</p>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-lg-6">
+            <div class="card p-4">
+              <h5>Certificates by Institution</h5>
+              <canvas id="instChart" height="250"></canvas>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="card p-4">
+              <h5>Verification Results</h5>
+              <canvas id="verifyChart" height="250"></canvas>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="card p-4">
+              <h5>Monthly Certificate Issuance</h5>
+              <canvas id="monthlyChart" height="120"></canvas>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="card p-4">
+              <h5>Institution Breakdown</h5>
+              <div class="table-responsive mt-3">
+                <table class="table">
+                  <thead><tr><th>Institution</th><th>Certificates Issued</th></tr></thead>
+                  <tbody id="instTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    const user = requireAuth(['admin']);
+    if (!user) throw new Error('Unauthorized');
+    document.getElementById('userName').textContent = user.name;
+
+    const colors = ['#1a365d', '#2c5282', '#c9a227', '#276749', '#c53030', '#6b46c1'];
+
+    async function loadReports() {
+      const data = await api.getReports();
+      const r = data.reports;
+
+      document.getElementById('instTable').innerHTML = r.certsByInstitution.map(i => `
+        <tr><td>${i._id || 'Unknown'}</td><td>${i.count}</td></tr>
+      `).join('') || '<tr><td colspan="2" class="text-muted">No data</td></tr>';
+
+      new Chart(document.getElementById('instChart'), {
+        type: 'doughnut',
+        data: {
+          labels: r.certsByInstitution.map(i => i._id),
+          datasets: [{ data: r.certsByInstitution.map(i => i.count), backgroundColor: colors }],
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } },
+      });
+
+      new Chart(document.getElementById('verifyChart'), {
+        type: 'bar',
+        data: {
+          labels: r.verificationsByResult.map(v => v._id),
+          datasets: [{
+            label: 'Verifications',
+            data: r.verificationsByResult.map(v => v.count),
+            backgroundColor: colors,
+          }],
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } },
+      });
+
+      new Chart(document.getElementById('monthlyChart'), {
+        type: 'line',
+        data: {
+          labels: r.monthlyIssuance.map(m => m._id),
+          datasets: [{
+            label: 'Certificates Issued',
+            data: r.monthlyIssuance.map(m => m.count),
+            borderColor: '#1a365d',
+            backgroundColor: 'rgba(26, 54, 93, 0.1)',
+            fill: true,
+            tension: 0.3,
+          }],
+        },
+        options: { responsive: true },
+      });
+    }
+
+    loadReports();
+  </script>
+</body>
+</html>

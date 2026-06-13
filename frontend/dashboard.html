@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - CertiChain</title>
+  <script src="/js/api.js"></script>
+  <script>
+    const user = getUser();
+    if (!user) window.location.href = '/login.html';
+    else redirectByRole(user);
+  </script>
+</head>
+<body><p>Redirecting...</p></body>
+</html>
