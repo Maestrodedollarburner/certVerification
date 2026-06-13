@@ -30,9 +30,18 @@ async function seedAdminIfNeeded() {
 }
 
 const connectDB = async () => {
+  const isProduction = process.env.NODE_ENV === 'production';
   const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/certificate_verification';
+  const useMemoryDb = process.env.USE_MEMORY_DB === 'true';
 
-  if (process.env.USE_MEMORY_DB === 'true') {
+  if (useMemoryDb && isProduction) {
+    throw new Error(
+      'USE_MEMORY_DB is not supported in production. ' +
+      'Set MONGODB_URI to a hosted database (e.g. MongoDB Atlas) and USE_MEMORY_DB=false.'
+    );
+  }
+
+  if (useMemoryDb) {
     const { MongoMemoryServer } = require('mongodb-memory-server');
     memoryServer = await MongoMemoryServer.create();
     await mongoose.connect(memoryServer.getUri());
@@ -41,16 +50,24 @@ const connectDB = async () => {
     return;
   }
 
+  if (isProduction && !process.env.MONGODB_URI) {
+    throw new Error(
+      'MONGODB_URI is required in production. ' +
+      'Create a free cluster at https://www.mongodb.com/atlas and set the connection string in your hosting env vars.'
+    );
+  }
+
   try {
-    await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+    await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 });
     console.log('MongoDB connected');
+    await seedAdminIfNeeded();
   } catch (err) {
-    console.error('\n❌ MongoDB is not running at 127.0.0.1:27017\n');
+    console.error('\n❌ Could not connect to MongoDB\n');
     console.error('Fix options:');
     console.error('  1. Install MongoDB: winget install MongoDB.Server');
     console.error('  2. Start the service:  net start MongoDB');
     console.error('  3. Or use MongoDB Atlas — set MONGODB_URI in .env');
-    console.error('  4. Or set USE_MEMORY_DB=true in .env (dev only, first run downloads MongoDB)\n');
+    console.error('  4. Or set USE_MEMORY_DB=true in .env (local dev only)\n');
     throw err;
   }
 };
