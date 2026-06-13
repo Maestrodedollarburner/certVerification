@@ -13,6 +13,7 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16) {
   console.warn('Warning: Set a strong JWT_SECRET in .env for production.');
 }
 
+app.set("trust proxy", 1);
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: process.env.CORS_ORIGIN || true }));
 app.use(express.json({ limit: '1mb' }));
