@@ -1,7 +1,7 @@
 const express = require('express');
 const Certificate = require('../models/Certificate');
 const VerificationLog = require('../models/VerificationLog');
-const { auth } = require('../middleware/auth');
+const { auth, optionalAuth } = require('../middleware/auth');
 const blockchain = require('../services/blockchain');
 
 const router = express.Router();
@@ -22,7 +22,9 @@ async function logVerification(certificateId, result, req, method = 'id') {
 }
 
 router.get('/history/recent', auth, async (req, res) => {
-  const filter = req.user.role === 'employer' ? { verifiedBy: req.user._id } : {};
+  const filter = req.user.role === 'employer'
+    ? { $or: [{ verifiedBy: req.user._id }, { verifierEmail: req.user.email }] }
+    : {};
   const logs = await VerificationLog.find(filter)
     .sort({ createdAt: -1 })
     .limit(20)
@@ -30,7 +32,7 @@ router.get('/history/recent', auth, async (req, res) => {
   res.json({ success: true, logs });
 });
 
-router.get('/:certificateId', async (req, res) => {
+router.get('/:certificateId', optionalAuth, async (req, res) => {
   const { certificateId } = req.params;
   const cert = await Certificate.findOne({ certificateId });
 
