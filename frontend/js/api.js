@@ -35,8 +35,7 @@ async function apiRequest(endpoint, options = {}) {
     throw new Error(data.message || 'Request failed');
   }
 
-  return data;
-}
+  return data;}
 
 const api = {
   login: (email, password) =>
